@@ -1,7 +1,6 @@
 package io.github.aarjavp.aoc.day01
 
 import io.github.aarjavp.aoc.readFromClasspath
-import java.util.LinkedList
 import kotlin.time.measureTime
 
 class Day01 {
