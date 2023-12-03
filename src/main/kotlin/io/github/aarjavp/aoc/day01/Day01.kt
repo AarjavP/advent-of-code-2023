@@ -1,6 +1,8 @@
 package io.github.aarjavp.aoc.day01
 
 import io.github.aarjavp.aoc.readFromClasspath
+import java.util.LinkedList
+import kotlin.time.measureTime
 
 class Day01 {
 
@@ -10,7 +12,6 @@ class Day01 {
         return firstDigit * 10 + lastDigit
     }
 
-    //TODO: use a trie
     private val digitsAsTextToValue = mapOf(
         "one" to 1,
         "two" to 2,
@@ -36,6 +37,56 @@ class Day01 {
         }.maxBy { it.first }.second
         return firstDigit * 10 + lastDigit
     }
+
+    class MyTrie {
+        class TrieNode {
+            val children: MutableMap<Char, TrieNode> = mutableMapOf()
+            var value: Int? = null
+        }
+        val root: TrieNode = TrieNode()
+
+        fun register(text: CharSequence, value: Int) {
+            require(text.isNotBlank())
+            require(value in 1..9)
+            var currentNode = root
+            for (char in text) {
+                currentNode = currentNode.children.computeIfAbsent(char) { TrieNode() }
+            }
+            require(currentNode.value == null || value == currentNode.value)
+            currentNode.value = value
+        }
+
+        fun findFirst(text: String): Int? {
+            for (i in text.indices) {
+                var currentNode = root
+                for (char in text.subSequence(i, text.length)) {
+                    currentNode = currentNode.children[char] ?: break
+                    if (currentNode.value != null) return currentNode.value
+                }
+            }
+            return null
+        }
+    }
+
+    val firstDigitSearchTrie: MyTrie = MyTrie().apply {
+        digitsAsTextToValue.forEach { register(it.key, it.value) }
+        for (i in 1..9) {
+            register(i.toString(), i)
+        }
+    }
+    val lastDigitSearchTrie: MyTrie = MyTrie().apply {
+        digitsAsTextToValue.forEach { register(it.key.reversed(), it.value) }
+        for (i in 1..9) {
+            register(i.toString(), i)
+        }
+    }
+
+    fun getCalibrationValuePart2Trie(line: String): Int {
+        val firstDigit = firstDigitSearchTrie.findFirst(line) ?: error("no digit found! searched: $line")
+        val lastDigit = lastDigitSearchTrie.findFirst(line.reversed()) ?: error("no digit found! searched: ${line.reversed()}")
+        return firstDigit * 10 + lastDigit
+    }
+
 }
 
 fun main() {
@@ -47,7 +98,19 @@ fun main() {
     }
 
     readFromClasspath("Day01.txt").useLines { lines ->
-        val sumOfCalibrations = lines.map { solver.getCalibrationValuePart2(it) }.sum()
-        println("Part 2 solution: $sumOfCalibrations")
+        val sumOfCalibrations: Int
+        val duration = measureTime {
+            sumOfCalibrations = lines.map { solver.getCalibrationValuePart2(it) }.sum()
+        }
+        println("Part 2 solution: $sumOfCalibrations in $duration")
     }
+
+    readFromClasspath("Day01.txt").useLines { lines ->
+        val sumOfCalibrations: Int
+        val duration = measureTime {
+            sumOfCalibrations = lines.map { solver.getCalibrationValuePart2Trie(it) }.sum()
+        }
+        println("Part 2 solution with trie: $sumOfCalibrations in $duration")
+    }
+
 }
